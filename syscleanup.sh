@@ -7,7 +7,7 @@
 # - save a load of time by not letting find descend into directories we never want to 
 #   compare 
 
-TAG=$(echo 'scu-'$(date +%Y%m%d_%H:%M:%S))
+TAG=$(date +%Y%m%d_%H:%M:%S)
 FindOpts=''
 
 # clear list is for points that rpm never provides any files under
