@@ -42,6 +42,9 @@ find_non_rpm_files() {
   for point in $ClearList; do
     find $point
   done
+
+  # Compare /tmp/scu-syslist and /tmp/scu-rpmlist to workout diff's
+  
 }
 
 find_mod_rpms() {
