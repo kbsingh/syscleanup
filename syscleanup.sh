@@ -25,7 +25,7 @@ RpmModList=/tmp/scu-rpmmod.$TAG
 # clear list is for points that rpm never provides any files under
 ClearList=(/home /media /misc /mnt /net /opt /root /srv)
 
-# ignorelist is for points where we expect local content - maynot be a big deal
+# ignorelist is for points where we expect local content - may not be a big deal
 IgnoreList=(/var/cache /var/log /var/tmp /tmp)
 
 # whitelist is for things that we know dont come from rpms, but need to be ignored
