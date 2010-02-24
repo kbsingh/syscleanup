@@ -6,6 +6,7 @@
 #   not have perms to check some of the file/package payloads
 # - save a load of time by not letting find descend into directories we never want to 
 #   compare 
+# - Not sure why were testing yum sanity; given that were not doing anything with it!
 #
 #  NOTE: This is *not* a security audit tool
 #
@@ -17,13 +18,13 @@ RpmFileList=/tmp/scu-rpmlist.$TAG
 RpmModList=/tmp/scu-rpmmod.$TAG
 
 # clear list is for points that rpm never provides any files under
-ClearList=(/home /opt /root /srv /tmp /var/tmp)
+ClearList=(/home /media /misc /mnt /net /opt /root /srv)
 
 # ignorelist is for points where we expect local content - maynot be a big deal
-IgnoreList=(/var/cache /var/log)
+IgnoreList=(/var/cache /var/log /var/tmp /tmp)
 
 # whitelist is for things that we know dont come from rpms, but need to be ignored
-WhiteList=(/proc /sys /dev /selinux)
+WhiteList=(/dev /proc /sys /selinux)
 
 check_sanity(){
   # make sure that rpmdb can be queried 
@@ -42,16 +43,19 @@ check_sanity(){
 
 build_findopts() {
   i=${#FindOpts[*]}
-  for d in "${ClearList[@]} ${IgnoreList[@]} ${WhiteList[@]}"; do
-    FindOpts[i++]="-not"
+  Supp_list=( ${ClearList[@]} ${IgnoreList[@]} )
+  Supp_list=( ${Supp_list[@]} ${WhiteList[@]} )
+  for d in "${Supp_list[@]}"; do
     FindOpts[i++]="-wholename"
     FindOpts[i++]="$d/*"
+    FindOpts[i++]="-prune"
+    FindOpts[i++]="-o"
   done
 }
 get_AllSystemFileList() {
   # Get a list of all files we care about 
   build_findopts
-  find / "${FindOpts[@]}"
+  find / "${FindOpts[@]}" -print
 }
 
 get_AllRpmFileList() {
@@ -59,10 +63,10 @@ get_AllRpmFileList() {
   rpm -qal 
 }
 
-find_non_rpm_files() {
+find_clearlist_files() {
   # All files under points defied as ClearList are non-rpm-packaged
-  for point in $ClearList; do
-    find $point
+  for dir in "${ClearList[@]}"; do
+    find $dir
   done
 }
 
@@ -77,6 +81,10 @@ find_mod_rpms() {
   done
 }
 
+find_rpms_origin(){
+  rpm --qf "%{vendor} : %{name}-%{version}-%{release}\n" -qa | sort
+}
+
 runas_root(){
 # Check if were running as root
   if [ `id -n -u` != 'root' ]; then
@@ -84,8 +92,9 @@ runas_root(){
   fi
 }
 
+
 runas_root
-if [ $? -ne 0 ];then echo -e ' .. \n .. Running this script as root would reduce false positives reported!' ; fi
+if [ $? -ne 0 ];then echo -e ' .. \n .. Running this script as root would reduce false positives !\n' ; fi
 check_sanity
 if [ $? -ne 0 ];then exit 1 ; fi
 
@@ -93,7 +102,13 @@ get_AllSystemFileList | sort > ${SysFileList}
 get_AllRpmFileList | sort | uniq > ${RpmFileList}
 find_mod_rpms > ${RpmModList}
 
-echo "Sysclean Run : " `date`
+echo " .. \n .. Sysclean Run : " `date`
 diff -uNr ${RpmFileList} ${SysFileList}
-echo -e " .. \n .. Content that has changed from what RPM brought in"
+echo " .. \n .. ClearList Files: \n"
+find_clearlist_files
+echo -e " .. \n .. Content that has changed from what RPM brought in \n"
 cat ${RpmModList}
+echo -e " .. \n .. Origin of the RPMS Installed \n"
+find_rpms_origin
+
+exit 0
