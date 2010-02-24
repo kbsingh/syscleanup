@@ -20,8 +20,6 @@ ToDo:
   * Add a getopts based options parser and allow user to just run some parts
     of the script
   * Make smart enough to handle changed-but-config files
-  * Check and report origin of all rpms installed on the machine ( repo
-    identification )
 
 Authors
   Karanbir Singh <kbsingh@karan.org>
