@@ -68,6 +68,9 @@ find_clearlist_files() {
   for dir in "${ClearList[@]}"; do
     find $dir
   done
+
+  # Compare /tmp/scu-syslist and /tmp/scu-rpmlist to workout diff's
+  
 }
 
 find_mod_rpms() {
