@@ -1,35 +1,57 @@
 #!/bin/sh
 #
-# (c) Karanbir Singh <kbsingh@karan.org>
+# (c) Karanbir Singh <kbsingh@karan.org>, Feb 2010
 #
 # - check if we are running as root, not doing so can cause false positives as we might
 #   not have perms to check some of the file/package payloads
 # - save a load of time by not letting find descend into directories we never want to 
 #   compare 
+#
+#  NOTE: This is *not* a security audit tool
+#
 
 TAG=$(date +%Y%m%d_%H:%M:%S)
-FindOpts=''
+FindOpts=()
+SysFileList=/tmp/scu-syslist.$TAG
+RpmFileList=/tmp/scu-rpmlist.$TAG
+RpmModList=/tmp/scu-rpmmod.$TAG
 
 # clear list is for points that rpm never provides any files under
-ClearList='/home /opt /root /srv /tmp /var/tmp'
+ClearList=(/home /opt /root /srv /tmp /var/tmp)
 
 # ignorelist is for points where we expect local content - maynot be a big deal
-IgnoreList='/var/cache /var/log'
+IgnoreList=(/var/cache /var/log)
 
 # whitelist is for things that we know dont come from rpms, but need to be ignored
-WhiteList='/proc /sys /dev /selinux'
+WhiteList=(/proc /sys /dev /selinux)
 
-util_build_findopts() {
-  # Build up the FindOpts based on ClearList, IgnoreList and Whitelist
-  for point in $ClearList $IgnoreList $WhiteList; do
-    FindOpts=$FindOpts" -not -wholename '$point'"
+check_sanity(){
+  # make sure that rpmdb can be queried 
+  rpmout=$( rpm --qf '%{name}\n' -qf /etc/inittab )
+  if [ $rpmout != 'initscripts' ] ; then
+    echo "RPM faild sanity test"
+    return -1
+  fi
+  # Just a basic test to make sure yum is usable on the machine 
+  python -c 'import yum'
+  if [ $? -ne 0 ]; then
+    echo 'YUM failed sanity test'
+    return -1
+  fi
+}
+
+build_findopts() {
+  i=${#FindOpts[*]}
+  for d in "${ClearList[@]} ${IgnoreList[@]} ${WhiteList[@]}"; do
+    FindOpts[i++]="-not"
+    FindOpts[i++]="-wholename"
+    FindOpts[i++]="$d/*"
   done
-
 }
 get_AllSystemFileList() {
   # Get a list of all files we care about 
-  util_build_findopts
-  find / $FindOpts  
+  build_findopts
+  find / "${FindOpts[@]}"
 }
 
 get_AllRpmFileList() {
@@ -49,8 +71,8 @@ find_mod_rpms() {
   for pkg in `rpm -qa`; do
     rpmout=$(rpm -V $pkg )
     if [ `echo $rpmout | grep -v '^$' | wc -l` -gt 0 ]; then
-      echo $pkg
-      echo $rpmout
+      echo '--: ' $pkg 
+      echo "$rpmout"
     fi
   done
 }
@@ -64,7 +86,14 @@ runas_root(){
 
 runas_root
 if [ $? -ne 0 ];then echo -e ' .. \n .. Running this script as root would reduce false positives reported!' ; fi
+check_sanity
+if [ $? -ne 0 ];then exit 1 ; fi
 
-get_AllSystemFileList > /tmp/scu-syslist.$TAG
-get_AllRpmFileList > /tmp/scu-rpmlist.$TAG
-find_mod_rpms > /tmp/scu-rpmmod.$TAG
+get_AllSystemFileList | sort > ${SysFileList}
+get_AllRpmFileList | sort | uniq > ${RpmFileList}
+find_mod_rpms > ${RpmModList}
+
+echo "Sysclean Run : " `date`
+diff -uNr ${RpmFileList} ${SysFileList}
+echo -e " .. \n .. Content that has changed from what RPM brought in"
+cat ${RpmModList}
