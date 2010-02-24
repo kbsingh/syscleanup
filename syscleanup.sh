@@ -1,14 +1,19 @@
 #!/bin/sh
 #
-# (c) Karanbir Singh <kbsingh@karan.org>, Feb 2010
+#  (c) Karanbir Singh <kbsingh@karan.org>, Feb 2010
 #
+# Usage:
+#  sudo ./syscleanup > run.report
+# 
+#  This script outputs _lots_ of text, so its a good idea to push it into a file
+#
+# Notes:
 # - check if we are running as root, not doing so can cause false positives as we might
 #   not have perms to check some of the file/package payloads
 # - save a load of time by not letting find descend into directories we never want to 
 #   compare 
 # - Not sure why were testing yum sanity; given that were not doing anything with it!
-#
-#  NOTE: This is *not* a security audit tool
+# - This is not a securty audit script, so dont treat it as such
 #
 
 TAG=$(date +%Y%m%d_%H:%M:%S)
