@@ -12,14 +12,14 @@ Usage:
 
 
 Contributing:
-  Hosted at http://gitorious.org/syscleanup/syscleanup; feel free to fork
+  Hosted at https://github.com/kbsingh/syscleanup; feel free to fork
   but do push merge requests :)
 
 ToDo:
   * Create a yum loop that does 'reinstall' for packages that need restored 
   * Add a getopts based options parser and allow user to just run some parts
     of the script
-  * Make smart enough to handle changed-but-config files
+  * Make smart enough to handle changed-but-config ( and ghost ) files
 
 Authors
   Karanbir Singh <kbsingh@karan.org>
