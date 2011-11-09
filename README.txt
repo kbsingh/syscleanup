@@ -16,6 +16,8 @@ generate a date order list in /tmp based on when content was last accessed
 on the machine ( atime for files ).
 
 Couple of things that are worth keeping in mind here :
+ - if you have parts ( if not all ) of the filesystem mounted with noatime,
+   this script is not going to do anything interesting
  - we are not considering files created by actions in rpm %pre / %post scripts
  - ideally, run the script as root; but you dont haveto
  - Some files will end up with really old dates - thats fine, its just the way
