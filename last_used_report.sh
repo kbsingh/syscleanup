@@ -19,14 +19,13 @@
 # Util to help locate rpms on a machine which might not
 # be used at all. Might want to run this as the root user.
 #
-# XXX: carefully inspect the output, some rpms provide
-# placeholder content, which is needed but not used
-# eg: filesystem 
-#
 # ---------------------------------------------------------------------------
 
-tst_dir=$(mktemp -d)
+if [ $(mount | grep noatime | wc -l ) -gt 0 ]; then
+  echo 'You have noatime mounts ~ will impact results'
+fi
 
+tst_dir=$(mktemp -d)
 for pkg in `rpm -qa`; do
   ts=$(find `rpm -ql $pkg` -type f -printf "%AY%Am%Ad%AH%AM\n" 2>/dev/null | sort -n | tail -n1 )
   touch -t $ts $tst_dir/$pkg
